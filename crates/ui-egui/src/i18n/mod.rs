@@ -22,6 +22,8 @@
 //! refused the same way ([`chinese_font_available`]).
 
 mod catalog;
+#[cfg(test)]
+mod zh_tw_baseline;
 
 use std::cell::Cell;
 use std::sync::{Arc, OnceLock};
@@ -512,9 +514,22 @@ mod tests {
             keys.extend(tl_literals(&source));
         }
         let language = Language::ZhTw;
-        let missing: Vec<_> = keys.iter().filter(|key| translatable(key) && !language.has(key)).collect();
+        // Preserve the initial translations that are still used, without making new UI keys a
+        // ninth required catalog. Future strings may use the normal English fallback.
+        let missing: Vec<_> = zh_tw_baseline::KEYS
+            .iter()
+            .copied()
+            .filter(|&(context, source)| {
+                if context.is_empty() {
+                    keys.iter().any(|key| key == source) && !language.has(source)
+                } else {
+                    language.catalog().and_then(|catalog| catalog.contextual(context, source)).is_none()
+                }
+            })
+            .collect();
         assert!(missing.is_empty(), "{}: {missing:#?}", language.code());
         assert_eq!(language.tr("My clip {n}.mp4"), "My clip {n}.mp4");
+        assert_eq!(language.tr("A future interface label without a translation"), "A future interface label without a translation");
     }
 
     /// Brazilian Portuguese covers the whole interface (the Spanish catalog's entries and the native

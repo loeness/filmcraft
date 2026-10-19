@@ -160,22 +160,10 @@ fn interface_font(language: crate::i18n::Language, bold: bool) -> Option<Arc<Fon
         .clone()
 }
 
-/// The Traditional Chinese choice stays readable before the user selects it.
-pub(crate) fn install_language_names(fonts: &mut FontDefinitions) {
-    use crate::i18n::Language;
-    let language = Language::ZhTw;
-    let Some(font) = interface_font(language, false) else {
-        return;
-    };
-    let name = format!("interface-{}", language.code());
-    fonts.font_data.insert(name.clone(), font);
-    for stack in fonts.families.values_mut() {
-        stack.push(name.clone());
-    }
-}
-
 /// Keep the Latin faces first, then this language's CJK face ahead of other script fallbacks.
 /// Traditional Chinese must not rely on a Japanese-only font.
+/// Other interface languages keep the existing Chinese fallback for the language menu label;
+/// resolve and read a Taiwan face only when Traditional Chinese is selected.
 pub(crate) fn install_interface(fonts: &mut FontDefinitions, language: crate::i18n::Language) -> bool {
     if interface_sample(language).is_none() {
         return true;
