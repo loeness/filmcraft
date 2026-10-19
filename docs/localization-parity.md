@@ -1,6 +1,6 @@
 # Localization parity
 
-> **Last reviewed:** 2026-10-10 · **Last updated:** 2026-10-13 · **Change:** minor (native Traditional Chinese, Taiwan) · **Target:** Adobe Premiere Pro 2026 (26.5.2)
+> **Last reviewed:** 2026-10-19 · **Last updated:** 2026-10-19 · **Change:** minor (Traditional Chinese review follow-up) · **Target:** Adobe Premiere Pro 2026 (26.5.2)
 
 Per-language status of FilmCraft's interface. Premiere 26.5.2 ships 10 interface languages (the
 installed bundle's `.lproj` folders): German, English, Spanish, French, Italian, Japanese, Korean,
@@ -22,6 +22,10 @@ label; `ja.tsv`, `fr.tsv` and `pt-br.tsv` have the same entries but are not yet 
 entry without a Spanish one). Engine error messages, the
 control channel, the CLI and MCP stay English.
 
+Traditional Chinese checks a fixed baseline of its initial translated keys that remain in use;
+new UI keys may fall back to English until translated. It does not add a ninth required catalog.
+The baseline in `crates/ui-egui/src/i18n/zh_tw_baseline.rs` contains keys only, not translations.
+
 Fonts come from [craft-fonts](https://github.com/storytold/craft-fonts) (`CRAFT_FONTS_DIR`, all
 official releases) or an installed system face; without one, switching to Japanese or Chinese is
 refused with a message. Simplified Chinese is picked for `zh`, `zh-CN`, `zh-SG` and `zh-Hans`.
@@ -32,6 +36,10 @@ fallback fonts (`crates/ui-egui/src/rtl.rs`), but it has no bidi pass: only capt
 blocks, the Text panel list when not being edited) are laid out in reading order, and the interface
 itself is never mirrored right to left. The title engine (`crates/text`, harfrust + bidi) lays out
 right to left, but Arabic titles are reported broken (#395).
+
+The Traditional Chinese menu label uses the existing Chinese fallback before selection. A Taiwan
+interface face is resolved and read only when that language is selected. If no supporting face is
+available, the fallback status is intentionally English, so it stays readable without that font.
 
 ## Status
 
@@ -53,7 +61,7 @@ whole interface, one PR) at ~4–8 h per language for the catalog plus tests.
 | Japanese | ja | 3,487 (99.7%) | as zh-cn; system-font kanji may pick the Chinese fallback (#547) | CJK fonts, vertical title text | not recorded | partial | 4–8 h + review |
 | German | de | 371 (10.6%) | menus only | Latin | yes (#630) | menus only | 5–9 h + review |
 | Korean | ko | 3,573 (same entries as Spanish, plus the macOS Settings item) | as Spanish | installed system Hangul font (Malgun Gothic, Apple SD Gothic Neo, Noto Sans CJK KR…); refused without one | not recorded; welcome | partial (#508) | review; Hangul in craft-fonts for the web |
-| Traditional Chinese (Taiwan) | zh-tw | 3,594 entries; covers the current source keys | dialogs, Settings, effects, shortcuts and status; engine errors English | native builds; CJK craft-fonts or an installed face, with collection face indices retained | not recorded; welcome | partial | native-speaker review |
+| Traditional Chinese (Taiwan) | zh-tw | 3,595 entries; fixed initial-key baseline, new keys fall back to English | dialogs, Settings, effects, shortcuts and status; engine errors English | native builds; Taiwan face loaded on selection, with collection face indices retained | Taiwan terminology corrections from WavJaby; further review welcome | partial | native-speaker review |
 | Vietnamese | vi | 0 (0%) | — | Latin with stacked diacritics (font coverage to check) | — | none | 6–12 h + review |
 | *Other shipped:* Italian | it | 3,573 (same entries as Spanish, plus the macOS Settings item); must cover the core menus, no entry without a Spanish one | as Spanish | Latin (bundled fonts) | not recorded; welcome | partial | review |
 | *Other shipped:* Ukrainian | uk | 351 (10.0%) | menus only | Cyrillic (bundled) | not recorded | menus only | 5–9 h |
@@ -70,6 +78,7 @@ Every language needs native-speaker review (human).
 
 | Date | Change | Summary |
 |---|---|---|
+| 2026-10-19 | minor | Taiwan fonts load on language selection; fixed initial-key coverage allows future English fallback; missing-font status intentionally stays readable in English |
 | 2026-10-13 | minor | Native Traditional Chinese, Taiwan, added with locale selection, persistence and font fallbacks |
 | 2026-10-11 | minor | German (de) ships the menus (#630): 371 of 3,498 strings (10.6%), native-reviewed; dimension now 2 menus-only, 5 none |
 | 2026-10-10 | major | Created from ROADMAP.md's "Interface localization" section; catalog coverage measured (es 3,496, ja 3,487, zh-cn 3,485, pt-br 348, uk 351 of 3,498); the 12-language table and script-support gaps added |

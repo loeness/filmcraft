@@ -438,7 +438,6 @@ pub(crate) fn install_fonts(ctx: &egui::Context, language: crate::i18n::Language
     add_craft_fonts(&mut fonts);
     crate::cjk::install(&mut fonts);
     crate::rtl::install(&mut fonts);
-    crate::cjk::install_language_names(&mut fonts);
     if !crate::cjk::install_interface(&mut fonts, language) {
         return false;
     }
@@ -720,6 +719,18 @@ mod tests {
             if n == 0 {
                 assert!(defs.families.values().flatten().all(|name| !name.starts_with("craft:")));
             }
+        });
+    }
+
+    #[test]
+    fn english_does_not_install_a_taiwan_interface_face() {
+        let ctx = egui::Context::default();
+        assert!(install_fonts(&ctx, crate::i18n::Language::En));
+        ctx.run_ui(egui::RawInput::default(), |_| {}).textures_delta.clear();
+        ctx.fonts_mut(|fonts| {
+            let definitions = fonts.definitions();
+            assert!(definitions.font_data.keys().all(|name| !name.starts_with("interface-zh-tw")));
+            assert!(definitions.families.values().flatten().all(|name| !name.starts_with("interface-zh-tw")));
         });
     }
 
