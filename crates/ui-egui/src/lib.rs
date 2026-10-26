@@ -1050,6 +1050,9 @@ impl FilmcraftApp {
                 self.ui.language = i18n::Language::En;
                 self.ui.status = tl!("no Chinese font is installed on this system; the interface stays in English").into();
             } else if language == i18n::Language::ZhTw && !theme::install_fonts(ctx, language) {
+                // Failed font installation leaves egui's current definitions untouched. Clear a
+                // prior language's stack before presenting the English fallback.
+                theme::install_fonts(ctx, i18n::Language::En);
                 self.ui.language = i18n::Language::En;
                 // Intentionally English: the requested script cannot be rendered without its font,
                 // and this message explains the fallback to the now-English interface.
@@ -2482,11 +2485,18 @@ impl FilmcraftApp {
             // theme::install replaces the fonts: add the system Japanese font back (or fall back to
             // English when a saved Japanese setting meets a system without one)
             // (likewise Chinese without a Chinese face, Korean without a Hangul one)
+            let traditional_chinese_missing = self.ui.language == i18n::Language::ZhTw && !theme::install_fonts(ctx, self.ui.language);
             let japanese_missing = self.ui.language == i18n::Language::Ja && !i18n::install_japanese_font(ctx);
-            if japanese_missing
+            if traditional_chinese_missing {
+                // `theme::install` follows the previously active catalog. A failed Taiwan-font
+                // lookup leaves those definitions in place, so install the English stacks too.
+                theme::install_fonts(ctx, i18n::Language::En);
+                self.ui.language = i18n::Language::En;
+                i18n::set_current(i18n::Language::En);
+                ctx.set_language(Some(i18n::Language::En.bcp47().to_owned()));
+            } else if japanese_missing
                 || (self.ui.language == i18n::Language::ZhCn && !i18n::chinese_font_available())
                 || (self.ui.language == i18n::Language::Ko && !i18n::korean_font_available())
-                || (self.ui.language == i18n::Language::ZhTw && !theme::install_fonts(ctx, self.ui.language))
             {
                 self.ui.language = i18n::Language::En;
             }

@@ -5,6 +5,30 @@ use std::sync::{Arc, OnceLock};
 
 use egui::{FontData, FontDefinitions, FontFamily};
 
+#[cfg(test)]
+std::thread_local! {
+    static FORCE_TRADITIONAL_CHINESE_UNAVAILABLE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Scope a missing Traditional Chinese interface face to the calling test thread.
+#[cfg(test)]
+pub(crate) struct TraditionalChineseUnavailableGuard(bool);
+
+#[cfg(test)]
+impl Drop for TraditionalChineseUnavailableGuard {
+    fn drop(&mut self) {
+        FORCE_TRADITIONAL_CHINESE_UNAVAILABLE.with(|forced| forced.set(self.0));
+    }
+}
+
+/// Force the Traditional Chinese interface font lookup to fail, regardless of the machine's
+/// installed fonts or an earlier cached lookup. This is test-only and does not mutate the font registry.
+#[cfg(test)]
+pub(crate) fn force_traditional_chinese_unavailable() -> TraditionalChineseUnavailableGuard {
+    let previous = FORCE_TRADITIONAL_CHINESE_UNAVAILABLE.with(|forced| forced.replace(true));
+    TraditionalChineseUnavailableGuard(previous)
+}
+
 const SAMPLE: &str = "中文轨道配乐音效简体汉语繁體漢語车";
 const PREFERRED: &[&str] = &[
     "Microsoft YaHei UI",
@@ -124,6 +148,10 @@ fn preferred_interface_families(language: crate::i18n::Language) -> &'static [&'
 /// Cache one owned font per script; collection face indices are retained on Windows.
 fn interface_font(language: crate::i18n::Language, bold: bool) -> Option<Arc<FontData>> {
     use crate::i18n::Language;
+    #[cfg(test)]
+    if language == Language::ZhTw && FORCE_TRADITIONAL_CHINESE_UNAVAILABLE.with(std::cell::Cell::get) {
+        return None;
+    }
     static FONTS: [OnceLock<Option<Arc<FontData>>>; 2] = [const { OnceLock::new() }; 2];
     let script = match language {
         Language::ZhTw => 0,
