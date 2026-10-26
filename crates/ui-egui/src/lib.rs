@@ -627,6 +627,8 @@ impl FilmcraftApp {
         let workspaces =
             session.prefs_path.as_ref().and_then(|p| p.parent()).map(|d| dock::WorkspacePrefs::load(&d.join(dock::WORKSPACES_FILE))).unwrap_or_default();
         let language = i18n::Language::parse(&session.prefs.general.interface_language).unwrap_or_default();
+        // Traditional Chinese is native-only, including when restoring saved preferences.
+        let language = if cfg!(target_arch = "wasm32") && language == i18n::Language::ZhTw { i18n::Language::En } else { language };
         let ime_document_epoch = session.document_epoch;
         let ime_active_sequence = session.state.active_sequence;
         Self {
@@ -1036,6 +1038,8 @@ impl FilmcraftApp {
                 }
                 None => i18n::Language::default(),
             };
+            // Normalize before font installation or assigning the language to the UI.
+            let language = if cfg!(target_arch = "wasm32") && language == i18n::Language::ZhTw { i18n::Language::En } else { language };
             if self.ui.language == i18n::Language::ZhTw && language != i18n::Language::ZhTw {
                 theme::install_fonts(ctx, language);
             }
